@@ -1,0 +1,6 @@
+@NEXUS_HostAddress = http://localhost:5106
+
+GET {{NEXUS_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

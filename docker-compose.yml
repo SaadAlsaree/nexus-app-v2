@@ -1,0 +1,93 @@
+services:
+  nexus:
+    container_name: nexus-app
+    image: ${DOCKER_REGISTRY-}nexus
+    build:
+      context: .
+      dockerfile: NEXUS/Dockerfile
+    depends_on:
+      nexus-postgres:
+        condition: service_healthy
+      nexus-blob-storage:
+        condition: service_healthy
+      nexus-neo-4j:
+        condition: service_healthy
+    networks:
+      - nexus-network
+
+  nexus-postgres:
+    image: postgres:17
+    container_name: nexus-postgres
+    restart: unless-stopped
+    environment:
+      - POSTGRES_DB=NexusDb
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    volumes:
+      - nexus_postgres_data:/var/lib/postgresql/data
+    ports:
+      - 5435:5432
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d NexusDb"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - nexus-network
+
+  nexus-blob-storage:
+    image: mcr.microsoft.com/azure-storage/azurite:latest
+    container_name: nexus-blob-storage
+    restart: unless-stopped
+    ports:
+      - "10000:10000"
+      - "10001:10001"
+      - "10002:10002"
+    command: "azurite --blobHost 0.0.0.0 --blobPort 10000 --queueHost 0.0.0.0 --queuePort 10001 --tableHost 0.0.0.0 --tablePort 10002 --loose --location /data --skipApiVersionCheck"
+    volumes:
+      - ./nexus_storage/azurite:/data
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z 127.0.0.1 10000 || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - nexus-network
+
+  nexus-neo-4j:
+    image: neo4j:5.11.0
+    container_name: nexus-neo-4j
+    restart: unless-stopped
+    environment:
+      - NEO4J_AUTH=neo4j/AdminSaad
+    ports:
+      - 7687:7687
+      - 7474:7474
+    volumes:
+      - ./nexus_storage/neo4j:/data
+    healthcheck:
+      test: ["CMD-SHELL", "wget --quiet --tries=1 --spider http://127.0.0.1:7474 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - nexus-network
+
+  nexus-client:
+    image: ${DOCKER_REGISTRY-}nexus-client
+    container_name: nexus-client
+    restart: always
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-}
+    networks:
+      - nexus-network
+
+networks:
+  nexus-network:
+    driver: bridge
+
+volumes:
+  nexus_postgres_data:

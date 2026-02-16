@@ -1,0 +1,3 @@
+namespace NEXUS.Features.InterrogationSessionFeature.GetBySuspectId;
+
+public record GetInterrogationSessionsBySuspectIdQuery(Guid SuspectId);

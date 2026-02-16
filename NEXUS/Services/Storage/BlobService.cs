@@ -1,0 +1,89 @@
+﻿using Azure.Storage.Blobs;
+using Azure.Storage.Blobs.Models;
+using NEXUS.Infrastructure.Common;
+
+namespace NEXUS.Services.Storage;
+
+public sealed class BlobService(BlobServiceClient blobServiceClient) : IBlobService
+{
+    private const string ContainerName = "nexus";
+
+    private async Task<BlobContainerClient> EnsureContainerExistsAsync(CancellationToken cancellationToken = default)
+    {
+        BlobContainerClient containerClient = blobServiceClient.GetBlobContainerClient(ContainerName);
+
+        await containerClient.CreateIfNotExistsAsync(
+            PublicAccessType.None,
+            cancellationToken: cancellationToken);
+
+        return containerClient;
+    }
+
+    public async Task<Result<Guid>> UploadAsync(Stream stream, string contentType, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            BlobContainerClient containerClient = await EnsureContainerExistsAsync(cancellationToken);
+
+            var fileId = Guid.NewGuid();
+            BlobClient blobClient = containerClient.GetBlobClient(fileId.ToString());
+
+            await blobClient.UploadAsync(
+                stream,
+                new BlobHttpHeaders { ContentType = contentType },
+                cancellationToken: cancellationToken);
+
+            return Result.Success(fileId);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Blob Upload Error: {ex.Message}");
+            if (ex.InnerException != null)
+            {
+                Console.WriteLine($"Inner Error: {ex.InnerException.Message}");
+            }
+            return Result.Failure<Guid>(FileErrors.UploadFailed);
+        }
+    }
+
+    public async Task<Result<FileResponse>> DownloadAsync(Guid fileId, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            BlobContainerClient containerClient = await EnsureContainerExistsAsync(cancellationToken);
+
+            BlobClient blobClient = containerClient.GetBlobClient(fileId.ToString());
+
+            if (!await blobClient.ExistsAsync(cancellationToken))
+            {
+                return Result.Failure<FileResponse>(FileErrors.NotFound(fileId));
+            }
+
+            var response = await blobClient.DownloadContentAsync(cancellationToken: cancellationToken);
+
+            return Result.Success(new FileResponse(response.Value.Content.ToStream(), response.Value.Details.ContentType));
+        }
+        catch (Exception)
+        {
+            return Result.Failure<FileResponse>(FileErrors.NotFound(fileId));
+        }
+    }
+
+    public async Task<Result> DeleteAsync(Guid fileId, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            BlobContainerClient containerClient = await EnsureContainerExistsAsync(cancellationToken);
+
+            BlobClient blobClient = containerClient.GetBlobClient(fileId.ToString());
+
+            await blobClient.DeleteIfExistsAsync(cancellationToken: cancellationToken);
+
+            return Result.Success();
+        }
+        catch (Exception)
+        {
+            return Result.Failure(FileErrors.NotFound(fileId));
+        }
+    }
+}

@@ -1,0 +1,18 @@
+services:
+  nexus:
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_HTTP_PORTS=5000
+    ports:
+      - "5000:5000"
+
+  nexus-client:
+    environment:
+      - NODE_ENV=development
+      - API_URL=http://nexus-app:5000
+    ports:
+      - "3000:3000"
+
+  # In development, allow direct access to API too
+  # Access app through http://localhost (port 80) via Nginx
+  # Or directly: http://localhost:3000 (client) / http://localhost:5000 (API)

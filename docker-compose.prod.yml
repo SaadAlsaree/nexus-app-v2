@@ -1,0 +1,16 @@
+# Production override - use this on the server
+# Usage: docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+services:
+  nexus:
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_HTTP_PORTS=5000
+    ports:
+      - "5000:5000"
+
+  nexus-client:
+    environment:
+      - NODE_ENV=production
+      - API_URL=http://nexus-app:5000
+    ports:
+      - "3000:3000"
