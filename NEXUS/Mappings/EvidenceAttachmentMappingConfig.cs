@@ -12,8 +12,8 @@ public class EvidenceAttachmentMappingConfig : IRegister
         config.NewConfig<EvidenceAttachment, EvidenceDto>()
             .Map(dest => dest.DownloadUrl, src =>
                 MapContext.Current != null && MapContext.Current.Parameters.ContainsKey("BaseUrl")
-                ? $"{MapContext.Current.Parameters["BaseUrl"]}{src.FileName}"
-                : $"/api/storage/{src.FileName}");
+                ? $"{MapContext.Current.Parameters["BaseUrl"]}{src.FilePath}"
+                : $"/api/storage/{src.FilePath}");
 
         config.NewConfig<UpdateEvidenceCommand, EvidenceAttachment>()
             .Ignore(dest => dest.Id)

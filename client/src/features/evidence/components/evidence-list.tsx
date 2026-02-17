@@ -2,9 +2,10 @@
 
 import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { FileIcon, Download, Trash2Icon, FileText, Loader2 } from 'lucide-react';
+import { FileIcon, Download, Trash2Icon, FileText, Loader2, Play } from 'lucide-react';
 import { Evidence } from '../types/evidence';
 import { getEvidenceByCaseId, getEvidenceBySuspectId, deleteEvidence, getEvidenceList } from '../api/evidence.service';
 import { toast } from 'sonner';
@@ -18,6 +19,14 @@ interface EvidenceListProps {
 export function EvidenceList({ caseId, suspectId, onAddEvidence }: EvidenceListProps) {
     const [evidence, setEvidence] = useState<Evidence[]>([]);
     const [loading, setLoading] = useState(true);
+    const [playingEvidence, setPlayingEvidence] = useState<Evidence | null>(null);
+
+    const isAudio = (fileType: string, fileName: string) => {
+        return fileType?.toLowerCase().includes('audio') || 
+               fileName?.toLowerCase().endsWith('.wav') || 
+               fileName?.toLowerCase().endsWith('.mp3') ||
+               fileName?.toLowerCase().endsWith('.m4a');
+    };
 
     const loadEvidence = async () => {
         setLoading(true);
@@ -96,6 +105,16 @@ export function EvidenceList({ caseId, suspectId, onAddEvidence }: EvidenceListP
                                                 <Download className="h-4 w-4" />
                                             </a>
                                         </Button>
+                                        {isAudio(item.fileType, item.fileName) && (
+                                            <Button 
+                                                variant="ghost" 
+                                                size="icon" 
+                                                className="h-8 w-8 text-green-600 hover:text-green-700 hover:bg-green-100"
+                                                onClick={() => setPlayingEvidence(item)}
+                                            >
+                                                <Play className="h-4 w-4" />
+                                            </Button>
+                                        )}
                                         <Button 
                                             variant="ghost" 
                                             size="icon" 
@@ -132,6 +151,21 @@ export function EvidenceList({ caseId, suspectId, onAddEvidence }: EvidenceListP
                     </div>
                 )}
             </CardContent>
+
+            <Dialog open={!!playingEvidence} onOpenChange={(open) => !open && setPlayingEvidence(null)}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>استماع للتسجيل: {playingEvidence?.fileName}</DialogTitle>
+                    </DialogHeader>
+                    <div className="flex justify-center p-4">
+                        {playingEvidence && (
+                            <audio controls src={playingEvidence.downloadUrl} className="w-full" autoPlay>
+                                متصفحك لا يدعم تشغيل الملفات الصوتية.
+                            </audio>
+                        )}
+                    </div>
+                </DialogContent>
+            </Dialog>
         </Card>
     );
 }

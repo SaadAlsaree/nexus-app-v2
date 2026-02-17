@@ -11,6 +11,10 @@ export function useAudioRecorder() {
 
     const startRecording = useCallback(async () => {
         try {
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                throw new Error("Browser does not support audio recording in this context. Ensure you are using HTTPS or localhost.");
+            }
+
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
             const mediaRecorder = new MediaRecorder(stream);
             mediaRecorderRef.current = mediaRecorder;
