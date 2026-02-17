@@ -43,8 +43,8 @@ Since the server is in an intranet environment (no public internet), we use self
 ## Step 3: Configure Nginx (Host)
 
 1.  **Update Configuration File:**
-    - Edit the project's `nginx/default.conf` file to match your specific generated certificate names if they differ from the example.
-    - Ensure `server_name` includes your Server IP.
+    - Edit the project's `nginx/default.conf` file to match your specific generated certificate names (`10.42.10.77+2.pem`).
+    - Ensure `server_name` includes `10.42.10.77`.
 
     _Current Configuration (`nginx/default.conf`):_
 
@@ -68,10 +68,26 @@ Since the server is in an intranet environment (no public internet), we use self
     sudo cp /opt/nexus-app/nginx/default.conf /etc/nginx/conf.d/nexus.conf
     ```
 
-3.  **Test and Reload Nginx:**
+3.  **Fix Permissions & SELinux (CRITICAL):**
+    Nginx needs specific permissions to read SSL files. Run these commands exactly:
+
+    ```bash
+    # Set ownership to root:nginx
+    sudo chown -R root:nginx /etc/nginx/ssl
+
+    # Set secure permissions (Header folder 750, files 640)
+    sudo chmod 750 /etc/nginx/ssl
+    sudo chmod 640 /etc/nginx/ssl/*
+
+    # Fix SELinux security context (Required for CentOS/RHEL)
+    sudo restorecon -Rv /etc/nginx/ssl
+    ```
+
+4.  **Test and Start Nginx:**
     ```bash
     sudo nginx -t
-    sudo nginx -s reload
+    sudo systemctl restart nginx
+    sudo systemctl status nginx
     ```
 
 ---
@@ -85,7 +101,7 @@ Since the server is in an intranet environment (no public internet), we use self
     ```
 
 2.  **Start Containers:**
-    Use the production compose file. This will start the App, API, and Database, but **NOT** Nginx (since we use the host's Nginx).
+    Use the production compose file. This starts the App, API, and DB, but **NOT** Nginx (using Host Nginx).
 
     ```bash
     docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
@@ -111,13 +127,6 @@ sudo firewall-cmd --permanent --add-service=https
 sudo firewall-cmd --reload
 ```
 
-**For UFW (Ubuntu):**
-
-```bash
-sudo ufw allow 80/tcp
-sudo ufw allow 443/tcp
-```
-
 ---
 
 ## Step 6: Fix SELinux (If Applicable)
@@ -134,7 +143,38 @@ sudo setsebool -P httpd_can_network_connect 1
 
 ## Troubleshooting
 
-- **"502 Bad Gateway":** Means Nginx cannot connect to the App or API. Check if containers are running (`docker compose ps`) and if `127.0.0.1:3000` is accessible locally via `curl`.
-- **"404 Not Found" on AI Features:** Ensure the `/ai-api` location block is correctly configured in Nginx and points to the correct AI server IP.
-- **"Mixed Content" Error:** Ensure the client app uses relative paths (`/ai-api`) or HTTPS links for external APIs.
-- **Browser Security Warning:** Users must install the Root CA of your `mkcert` (or click "Proceed Unsafe") since these are self-signed certificates.
+- **"nginx: [emerg] cannot load certificate":**
+  - Check file existence: `sudo ls -l /etc/nginx/ssl/`
+  - Check permissions: `sudo namei -mo /etc/nginx/ssl/10.42.10.77+2.pem`
+  - Check SELinux: `sudo ls -Z /etc/nginx/ssl/` (should allow httpd_sys_content_t or similar). Run `restorecon` again.
+- **"502 Bad Gateway":** Nginx cannot connect to `127.0.0.1:3000`. Check if `nexus-client` container is running and exposing port 3000.
+- **"404 Not Found" on AI Features:** Verify `/ai-api` location block in `nexus.conf` points to correct AI server IP.
+- **Browser Security Warning:** Users must trust the `mkcert` Root CA or click "Proceed Unsafe".
+
+---
+
+## Quick Reference Commands
+
+**Run Application (Production):**
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
+```
+
+**Restart Nginx:**
+
+```bash
+sudo systemctl restart nginx
+```
+
+**Check Nginx Status:**
+
+```bash
+sudo systemctl status nginx
+```
+
+**Generate Certificates (Local):**
+
+```bash
+mkcert 10.42.10.77 localhost nexus.inss.local
+```
