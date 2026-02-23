@@ -1,11 +1,11 @@
 
 'use client';
-
+import { Input } from "@/components/ui/input"
 import { FormInput } from '@/components/forms/form-input';
 import { FormSelect } from '@/components/forms/form-select';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Form } from '@/components/ui/form';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import {
   SuspectDetails,
   SuspectStatus,
@@ -216,12 +216,30 @@ export default function SuspectsForm({
                 label='اسم الأم'
                 placeholder='أدخل اسم الأم (اختياري)'
               />
-              <FormDatePicker
-                 className='col-span-4'
+              <FormField
                 control={form.control}
                 name='dateOfBirth'
-                label='تاريخ الميلاد'
+                render={({ field }) => (
+                  <FormItem className='col-span-4'>
+                    <FormLabel>تاريخ الميلاد</FormLabel>
+                    <FormControl>
+                      <Input
+                        type='date'
+                        placeholder='اختر تاريخ الميلاد'
+                        value={field.value ? format(field.value, 'yyyy-MM-dd') : ''}
+                        onChange={(e) => {
+                          field.onChange(e.target.value ? new Date(e.target.value) : undefined);
+                        }}
+                        onBlur={field.onBlur}
+                        name={field.name}
+                        ref={field.ref}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
+             
               <FormInput
                  className='col-span-4'
                 control={form.control}

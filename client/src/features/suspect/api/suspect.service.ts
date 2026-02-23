@@ -162,7 +162,7 @@ export async function deleteLifeHistory(lifeHistoryId: string): Promise<Response
 }
 
 export async function downloadSuspectReport(id: string): Promise<void> {
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
     const response = await fetch(`${apiUrl}/api/suspects/${id}/report`, {
         method: 'GET',
     });

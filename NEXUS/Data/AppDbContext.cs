@@ -1,11 +1,10 @@
-﻿using Microsoft.EntityFrameworkCore;
-using NEXUS.Data.Entities;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 
 namespace NEXUS.Data;
 
 public class AppDbContext(DbContextOptions options) : DbContext(options)
 {
-
     public DbSet<Address> Addresses { get; set; }
     public DbSet<Assignment> Assignments { get; set; }
     public DbSet<BayahDetail> BayahDetails { get; set; }
@@ -23,6 +22,13 @@ public class AppDbContext(DbContextOptions options) : DbContext(options)
     public DbSet<TrainingCourse> TrainingCourses { get; set; }
     public DbSet<SystemAlert> SystemAlerts { get; set; }
     public DbSet<InterrogationSession> InterrogationSessions { get; set; }
+    public DbSet<ApplicationUser> Users { get; set; }
+    public DbSet<IdentityRole> Roles { get; set; }
+    public DbSet<IdentityUserRole<string>> UserRoles { get; set; }
+    public DbSet<IdentityUserClaim<string>> UserClaims { get; set; }
+    public DbSet<IdentityUserLogin<string>> UserLogins { get; set; }
+    public DbSet<IdentityRoleClaim<string>> RoleClaims { get; set; }
+    public DbSet<IdentityUserToken<string>> UserTokens { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

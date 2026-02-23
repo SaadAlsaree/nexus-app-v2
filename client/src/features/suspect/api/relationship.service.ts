@@ -1,36 +1,51 @@
 import { Response } from '@/types';
 import { RelationshipRequest } from '../types/relationship';
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+import { fetchClient } from '@/lib/fetch-client';
 
 export async function createRelationship(body: RelationshipRequest): Promise<Response<void>> {
-    const response = await fetch(`${API_URL}/api/suspects/${body.suspectId}/relationships`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(body),
-    });
-    const data = (await response.json()) as Response<void>;
-    return data;
+    const { data, error } = await fetchClient<Response<void>>(`/api/suspects/${body.suspectId}/relationships`, 'POST', { body });
+
+    if (error) {
+        return {
+            succeeded: false,
+            data: null,
+            message: error.message,
+            code: error.status.toString(),
+            errors: []
+        };
+    }
+
+    return data!;
 }
 
 export async function updateRelationship(body: RelationshipRequest): Promise<Response<void>> {
-    const response = await fetch(`${API_URL}/api/suspects/${body.suspectId}/relationships/${body.relatedPersonId}`, {
-        method: 'PUT',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(body),
-    });
-    const data = (await response.json()) as Response<void>;
-    return data;
+    const { data, error } = await fetchClient<Response<void>>(`/api/suspects/${body.suspectId}/relationships/${body.relatedPersonId}`, 'PUT', { body });
+
+    if (error) {
+        return {
+            succeeded: false,
+            data: null,
+            message: error.message,
+            code: error.status.toString(),
+            errors: []
+        };
+    }
+
+    return data!;
 }
 
 export async function deleteRelationship(suspectId: string, relatedPersonId: string): Promise<Response<void>> {
-    const response = await fetch(`${API_URL}/api/suspects/${suspectId}/relationships/${relatedPersonId}`, {
-        method: 'DELETE',
-    });
-    const data = (await response.json()) as Response<void>;
-    return data;
+    const { data, error } = await fetchClient<Response<void>>(`/api/suspects/${suspectId}/relationships/${relatedPersonId}`, 'DELETE');
+
+    if (error) {
+        return {
+            succeeded: false,
+            data: null,
+            message: error.message,
+            code: error.status.toString(),
+            errors: []
+        };
+    }
+
+    return data!;
 }

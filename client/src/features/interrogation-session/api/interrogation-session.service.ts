@@ -113,7 +113,8 @@ export async function deleteInterrogationSession(id: string): Promise<Response<v
 }
 
 export async function downloadInterrogationSessionReport(id: string, suspectName: string, sessionDate: string) {
-    const response = await fetch(process.env.NEXT_PUBLIC_API_URL + `/api/interrogation-sessions/${id}/report`, {
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
+    const response = await fetch(`${apiUrl}/api/interrogation-sessions/${id}/report`, {
         method: 'GET',
     });
 
